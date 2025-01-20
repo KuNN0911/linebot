@@ -15,9 +15,9 @@ from response import get_answer  # 引入 RAG 回應功能
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 載入環境變量
-from dotenv import load_dotenv
-load_dotenv()
+# # 載入環境變量
+# from dotenv import load_dotenv
+# load_dotenv()
 
 # 初始化 Flask 應用
 app = Flask(__name__)
