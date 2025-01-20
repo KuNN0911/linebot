@@ -1,0 +1,14 @@
+line-bot-sdk
+python-dotenv
+Flask
+opencc-python-reimplemented
+beautifulsoup4
+youtube-transcript-api
+pymongo
+ollama
+replicate
+prometheus-client
+speechrecognition
+waitress
+pydantic-settings
+exceptiongroup
