@@ -77,5 +77,5 @@ def handle_text_message(event):
             line_bot_api.reply_message(ReplyMessageRequest(reply_token=event.reply_token, messages=[error_message]))
 
 if __name__ == "__main__":
-    port = int(os.getenv('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
