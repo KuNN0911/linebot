@@ -1,5 +1,4 @@
 import re
-
 from langchain_ollama import OllamaLLM
 from langchain.prompts import PromptTemplate
 from opencc import OpenCC
