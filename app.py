@@ -18,6 +18,8 @@ from linebot.v3.webhooks import (
     TextMessageContent
 )
 
+import os
+
 app = Flask(__name__)
 
 configuration = Configuration(access_token='YOUR_CHANNEL_ACCESS_TOKEN')
