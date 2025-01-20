@@ -18,16 +18,59 @@ from linebot.v3.webhooks import (
     TextMessageContent
 )
 import re
-from langchain_ollama import OllamaLLM
-from langchain.prompts import PromptTemplate
-from opencc import OpenCC
 import os
+import torch 
+
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    pipeline
+)
 
 app = Flask(__name__)
 
 configuration = Configuration(access_token='5sz8JYIDMheE123GtSUc8VlpbKLagouytDCowyK5kSjXXZSMq6doCf0igbjb0JWwsKvJL11nR/htNRBxXWVQXh8FZPRJf1LedUfdtJ7/6NejPvSxfm4IP4ZecULRJhAgPmgmx47RqvDiUJDN8qOXDAdB04t89/1O/w1cDnyilFU=')
 handler = WebhookHandler('3a6be77370fd217863d193383981aa63')
 
+# 1. 加載模型和數據集
+base_model = "/home/user/henry/CAG/Meta-Llama-3-8B-Instruct"  # 可以更換為其他支持長上下文的模型
+
+# Bits and Bytes config for 4-bit quantization
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.bfloat16,
+    bnb_4bit_use_double_quant=False,
+)
+
+# 載入基礎模型並應用量化設置
+model = AutoModelForCausalLM.from_pretrained(
+    base_model,
+    quantization_config=bnb_config, 
+    torch_dtype=torch.bfloat16,
+    device_map="auto",
+    trust_remote_code=True
+)
+
+# 載入 tokenizer
+tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+tokenizer.padding_side = 'right'
+tokenizer.pad_token = tokenizer.eos_token
+tokenizer.add_eos_token = True
+
+# 將模型載入至 GPU（如果可用）
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+
+# 建立生成管線並指定 tokenizer
+pipe = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    torch_dtype=torch.float16,
+    device_map="auto",
+)
 
 @app.route("/callback", methods=['POST'])
 def callback():
@@ -62,38 +105,28 @@ def handle_message(event):
                 messages=[TextMessage(text=response)]
             )
         )
+
 def contains_simplified_chinese(text):
     # 使用 Unicode 範圍檢查是否包含簡體中文字符
     simplified_chinese_pattern = re.compile(r"[\u4e00-\u9fff]")
     return bool(simplified_chinese_pattern.search(text))
 
 def get_answer(question: str):
-    llm = OllamaLLM(model="llama3.1:8b-instruct-q8_0", temperature=0.1, base_url="http://localhost:11436")
-    casual_prompt = PromptTemplate(
-        input_variables=["input"],
-        template="""
-        You are a friendly assistant for **Bestat Biotechnology Co., Ltd.**. Please adhere to the following guidelines:  
-
-        1. Respond to the user in a kind and friendly manner.  
-        2. Answer the user's question directly.  
-        3. Do not under any circumstances ask the user questions or seek clarification. Provide only direct answers or responses.
-        4. Respond in the language used by the user.
-
-
-        **User's Question:**
-        {input}  
-
-        Begin response to the user's question: (The generated response must not include above paragraph)
-        """
+    messages = [
+        {"role": "system", "content": "You are an AI customer service who is an expert in language models!"},
+        {"role": "user", "content": question},
+    ]
+    
+    outputs = pipe(
+        messages,
+        max_new_tokens=256,
     )
-    casual_chain = casual_prompt | llm
-    response = casual_chain.invoke({"input": question})
-
-    if contains_simplified_chinese(response):
-        converter = OpenCC('s2t')  # 簡體轉繁體
-        response = converter.convert(response)
-
-    return response
+    
+    # 提取生成的回答文本
+    generated_text = outputs[0]["generated_text"]
+    assistant_content = [item['content'] for item in generated_text if item['role'] == 'assistant']
+    print(assistant_content[0])  # 如果只有一個 assistant 回答，則可以用這種方式
+    return (assistant_content[0])
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
