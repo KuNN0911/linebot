@@ -10,7 +10,7 @@ def contains_simplified_chinese(text):
 
 
 def get_answer(question: str):
-    llm = OllamaLLM(model="llama3.1:8b-instruct-q8_0", temperature=0.1, base_url="http://127.0.0.1:11436")
+    llm = OllamaLLM(model="llama3.1:8b-instruct-q8_0", temperature=0.1, base_url="http://localhost:11436")
     casual_prompt = PromptTemplate(
         input_variables=["input"],
         template="""
