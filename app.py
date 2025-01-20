@@ -28,21 +28,21 @@ handler = WebhookHandler('CHANNEL_SECRET')
 
 @app.route("/callback", methods=['POST'])
 def callback():
-    # get X-Line-Signature header value
-    signature = request.headers['X-Line-Signature']
-
-    # get request body as text
+    # Get the signature from the request header
+    signature = request.headers.get('X-Line-Signature')
     body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
 
-    # handle webhook body
+    # Log request details for debugging
+    app.logger.info(f"Request body: {body}")
+    app.logger.info(f"Request signature: {signature}")
+
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
-        app.logger.info("Invalid signature. Please check your channel access token/channel secret.")
-        abort(400)
+        app.logger.error("Invalid signature. Please check your channel access token/channel secret.")
+        return 'Invalid signature', 400
 
-    return 'OK'
+    return 'OK', 200
 
 
 @handler.add(MessageEvent, message=TextMessageContent)
