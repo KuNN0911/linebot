@@ -46,14 +46,19 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
+    user_input = event.message.text  # 使用者的問題
+    # 使用 get_answer 函數處理問題
+    response = get_answer(question=user_input)
+    
+    # 發送回應給使用者
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         line_bot_api.reply_message_with_http_info(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[TextMessage(text=event.message.text)]
+                messages=[TextMessage(text=response)]
             )
         )
 
 if __name__ == "__main__":
-    app.run(host='localhost', port=1407)
+    app.run(host='localhost', port=int(os.getenv('PORT', 5000)))
