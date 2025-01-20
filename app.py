@@ -21,16 +21,8 @@ handler = WebhookHandler('3a6be77370fd217863d193383981aa63')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# 載入環境變量
-from dotenv import load_dotenv
-load_dotenv()
-
 # 初始化 Flask 應用
 app = Flask(__name__)
-
-# 初始化 Line Bot API
-configuration = Configuration(access_token=os.getenv('LINE_CHANNEL_ACCESS_TOKEN'))
-handler = WebhookHandler(os.getenv('LINE_CHANNEL_SECRET'))
 
 # 快速回覆選項
 def create_quick_reply():
